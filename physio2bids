@@ -142,21 +142,25 @@ class DicomLoad:
     def __init__(self, directory):
         #load in all BOLD DICOMs from directory (just get first in folder)
         #get starting timestamp and name (ignore everything else), create dict
+
+        #this code assumes organization of DICOM files into sequence-specific directories - have to modify!
         print('Loading DICOMs from {}'.format(directory))
-        d = [i for i in os.listdir(directory) if os.path.isdir(os.path.join(directory, i))]
-        bold = [i for i in d if 'BOLD' in i]
+        #d = [i for i in os.listdir(directory) if os.path.isdir(os.path.join(directory, i))]
+        dcms = [i for i in os.listdir(directory)]
+        print len(dcms)
         util = Util()
         self.dcm_dict = {}
         bold_count = 0
-        for bd in bold:
-            #cheap way to get first item
-            f = [i for i in os.listdir(os.path.join(directory, bd)) if '000001.dcm' in i][0]
-            ds = pydicom.dcmread(os.path.join(directory, bd, f))
-            self.dcm_dict[util.ts2ms(ds.AcquisitionTime)] = bd
-            bold_count += 1
+        for elem in dcms:
+            #use only those dcms with correct protocol description
+            ds = pydicom.dcmread(os.path.join(directory, elem))
+            if ("t2star_epi" in ds.ProtocolName) or ("resting" in ds.ProtocolName):
+                self.dcm_dict[util.ts2ms(ds.AcquisitionTime)] = ds
+                bold_count += 1
         print('Loaded {} DICOMs'.format(bold_count))
 
     def get_taskname(self, timestamp):
+        print timestamp
         if timestamp < 0:
             return ("ERROR", timestamp)
         #check DICOMs for starting timestamp matching given, return task name
@@ -165,7 +169,8 @@ class DicomLoad:
         if len(k) == 1:
             return (self.dcm_dict[k[0]], k[0])
         for dcm in range(1,len(k)):
-            #print('Checking timestamp {} against {}'.format(k[dcm],timestamp))
+
+            print('Checking timestamp {} against {}'.format(k[dcm],timestamp))
             if k[dcm] >= timestamp and k[dcm-1] < timestamp:
                 return (self.dcm_dict[k[dcm]], k[dcm])
             if dcm-1 == 0 and k[dcm-1] > timestamp:
@@ -199,6 +204,7 @@ class PhysioLoad:
             self.log.write('Conversion target: {}\t'.format(e))
             phys = Physio(os.path.join(self.directory, e), type, self.write_loc, self.log)
             #get the taskname given this physio file's start timestamp
+            print(os.path.join(self.directory, e))
             resp = dcm.get_taskname(phys.get_start_time())
             if resp[0] == "ERROR":
                 print('ERROR RETRIEVING TASK NAME FROM DICOM - SKIPPING')

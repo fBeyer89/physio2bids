@@ -37,12 +37,12 @@ proc.communicate()
 
 #put physio2bids in /usr/local/bin
 cwd = os.getcwd()
-install_dest = '/usr/local/bin/'
-cmd = "sudo -S cp %s %s" % (os.path.join(cwd, 'physio2bids'), install_dest)
+install_dest = '/data/u_fbeyer_software/'
+cmd = "cp %s %s" % (os.path.join(cwd, 'physio2bids'), install_dest)
 proc = subprocess.Popen(cmd, shell=True)
 while proc.returncode == None:
 	proc.wait()
 
-print('Installed as /usr/local/bin/physio2bids')
+print('Installed as /data/u_fbeyer_software/physio2bids')
 print('Installation complete.')
 print('-----------------------\n')
